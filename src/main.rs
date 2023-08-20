@@ -1,7 +1,10 @@
 use anyhow::Result;
 use embedded_graphics::{
     draw_target,
-    mono_font::{ascii::FONT_6X10, MonoTextStyleBuilder},
+    mono_font::{
+        ascii::FONT_6X10, ascii::FONT_6X12, ascii::FONT_8X13_BOLD, MonoFont, MonoTextStyle,
+        MonoTextStyleBuilder,
+    },
     pixelcolor::BinaryColor,
     prelude::*,
     text::{Baseline, Text},
@@ -47,45 +50,34 @@ fn main() -> Result<()> {
         .into_buffered_graphics_mode();
     display.init().unwrap();
 
-    let text_style = MonoTextStyleBuilder::new()
+    let small_text_style = MonoTextStyleBuilder::new()
         .font(&FONT_6X10)
         .text_color(BinaryColor::On)
         .build();
+
+    let medium_text_style = MonoTextStyleBuilder::new()
+        .font(&FONT_6X12)
+        .text_color(BinaryColor::On)
+        .build();
+
+    let large_bold_text_style = MonoTextStyle::new(&FONT_8X13_BOLD, BinaryColor::On);
 
     loop {
         sht.start_measurement(shtPowerMode::NormalMode).unwrap();
         FreeRtos.delay_ms(500u32);
         let measurement = sht.get_measurement_result().unwrap();
         let temperature = measurement.temperature.as_degrees_celsius() * 1.8 + 32.0;
-        let temperature_text = String::from(format!("Temp: {:.1} °F", temperature,));
-        let humidity_text = String::from(format!(
-            "Humidity: %{:.1}",
-            measurement.humidity.as_percent()
-        ));
 
-        display.clear_buffer();
-        display.flush().unwrap();
-        Text::with_baseline(
-            "I love you, Mercedes!",
-            Point::zero(),
-            text_style,
-            Baseline::Top,
-        )
-        .draw(&mut display)
-        .unwrap();
+        let temperature_text = String::from(format!("{:.1} °F", temperature));
 
         Text::with_baseline(
             &temperature_text,
-            Point::new(0, 16),
-            text_style,
+            Point::zero(),
+            large_bold_text_style,
             Baseline::Top,
         )
         .draw(&mut display)
         .unwrap();
-
-        Text::with_baseline(&humidity_text, Point::new(0, 48), text_style, Baseline::Top)
-            .draw(&mut display)
-            .unwrap();
 
         display.flush().unwrap();
     }
